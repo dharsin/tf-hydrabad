@@ -15,6 +15,7 @@
       height: 100%;
       overflow: hidden;
       font-family: sans-serif;
+   
     }
 
     canvas {
@@ -32,17 +33,21 @@
 
     #audio-prompt {
       position: absolute;
-      bottom: 20px;
+      top: 15px;
       left: 50%;
       transform: translateX(-50%);
-      z-index: 10;
-      
-      color: #fff;
+      z-index: 100;
+    
+      color: #00e5ff;
       padding: 10px 20px;
+      border: 1px solid #00e5ff;
       border-radius: 20px;
-      font-size: 14px;
-      pointer-events: none;
+      font-size: 13px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
       text-align: center;
+      box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+      pointer-events: none;
     }
   </style>
 
@@ -53,11 +58,36 @@
     let hasPlayedIntro = false;
     let audioUnlocked = false;
 
+    // FIXED: Added the missing URL Opener handler script block
+    AFRAME.registerComponent('url-opener', {
+      schema: { link: { type: 'string' } },
+      init: function () {
+        const targetUrl = this.data.link;
+        this.el.addEventListener('click', function (evt) {
+          evt.stopPropagation(); // Stops interaction event layering bleed
+          if (targetUrl) {
+            window.open(targetUrl, '_blank');
+          }
+        });
+      }
+    });
+
     AFRAME.registerComponent('ar-target-listener', {
       init: function () {
         const video = document.querySelector('#cardVideo');
         const videoPlane = document.querySelector('#videoPlane');
         const introGroup = document.querySelector('#introGroup');
+        
+        const btnInsta = document.querySelector('#btnInsta');
+        const btnWeb = document.querySelector('#btnWeb');
+        const btnFB = document.querySelector('#btnFB');
+
+        const toggleSocials = (show) => {
+          const state = show ? 'true' : 'false';
+          btnInsta.setAttribute('visible', state);
+          btnWeb.setAttribute('visible', state);
+          btnFB.setAttribute('visible', state);
+        };
 
         this.el.addEventListener("targetFound", () => {
           console.log("Business card tracked.");
@@ -67,14 +97,14 @@
 
             introGroup.setAttribute('visible', 'true');
             videoPlane.setAttribute('visible', 'false');
-            
+            toggleSocials(false); // Keeps links hidden while text introduction is active
 
             introGroup.emit('start-intro-anim');
             
-     
             setTimeout(() => {
               introGroup.setAttribute('visible', 'false');
               videoPlane.setAttribute('visible', 'true');
+              toggleSocials(true); // Exposes buttons alongside video stream frame
               
               if (video) {
                 if (audioUnlocked) {
@@ -85,9 +115,9 @@
             }, 3500); 
 
           } else {
- 
             introGroup.setAttribute('visible', 'false');
             videoPlane.setAttribute('visible', 'true');
+            toggleSocials(true);
             if (video) {
               if (audioUnlocked) {
                 video.muted = false;
@@ -106,7 +136,6 @@
       }
     });
 
-
     function unlockAudioContext() {
       const video = document.querySelector('#cardVideo');
       const videoPlane = document.querySelector('#videoPlane');
@@ -115,9 +144,7 @@
         video.muted = false;
         audioUnlocked = true;
         
- 
         video.play().then(() => {
-     
           if (videoPlane.getAttribute('visible') === 'false') {
             video.pause();
             video.currentTime = 0;
@@ -133,7 +160,7 @@
 
 <body onclick="unlockAudioContext();">
 
-  <div id="audio-prompt">Tap screen anywhere to enable sound</div>
+  <div id="audio-prompt">🔊 TAP ANYWHERE TO ENABLE SOUND</div>
 
   <a-scene
     mindar-image="imageTargetSrc: ./tf-hydrabad.mind; filterMinCF:0.001; filterBeta:0.01; uiLoading:yes; uiScanning:yes;"
@@ -144,36 +171,30 @@
     device-orientation-permission-ui="enabled: false">
 
     <a-assets>
-
       <video id="cardVideo" src="./assets/hydrabad.mp4" loop="true" crossorigin="anonymous" playsinline
         webkit-playsinline muted autoplay></video>
 
       <img id="logoImg" src="./assets/tflogo.png" crossorigin="anonymous">
 
-
-      <img id="instaIcon" src=".\assets\insts.png" crossorigin="anonymous">
-      <img id="fbIcon" src=".\assets\facebook.png" crossorigin="anonymous">
-      <img id="webIcon" src=".\assets\web.png" crossorigin="anonymous">
-
-
+      <!-- FIXED: Changed backslashes (\) to standard forward slashes (/) -->
+      <img id="instaIcon" src="./assets/insts.png" crossorigin="anonymous">
+      <img id="fbIcon" src="./assets/facebook.png" crossorigin="anonymous">
+      <img id="webIcon" src="./assets/web.png" crossorigin="anonymous">
     </a-assets>
 
+    <!-- Raycaster mouse pointer definition to actively parse click inputs in 3D canvas coordinates -->
     <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;"
       raycaster="objects: .clickable; far: 10000; interval: 100;">
     </a-camera>
 
     <a-entity mindar-image-target="targetIndex: 0" ar-target-listener>
       
-    
       <a-image src="#logoImg" position="0 0.45 0" width="0.8" height="0.22" transparent="true"></a-image>
 
-
+      <!-- ANIMATED 3D TEXT FRAME -->
       <a-entity id="introGroup" position="0 0 0.01" scale="0.1 0.1 0.1" visible="false"
                 animation="property: scale; to: 1 1 1; dur: 800; easing: easeOutBack; startEvents: start-intro-anim">
- 
         <a-plane color="#0c101b" width="1.05" height="0.62" opacity="0.92"></a-plane>
-        
-
         <a-text 
           value="LET'S EXPLORE\nTHOUGHTFLOWS HYDERABAD" 
           color="#00e5ff" 
@@ -185,17 +206,18 @@
         </a-text>
       </a-entity>
 
-   
+      <!-- VIDEO PLANE -->
       <a-video id="videoPlane" class="clickable" src="#cardVideo" position="0 0 0" width="1.05" height="0.62" visible="false"></a-video>
 
-<a-image id="btnInsta" class="clickable" url-opener="link: https://www.instagram.com/thoughtflowshyderabad/" src="#instaIcon" 
-position="0.63 0.2 0" width="0.15" height="0.15" transparent="true"></a-image>
+      <!-- SOCIAL INTERACTION ICONS (Visibility handled implicitly via listener components) -->
+      <a-image id="btnInsta" class="clickable" url-opener="link: https://www.instagram.com/thoughtflowshyderabad/" src="#instaIcon" 
+               position="0.63 0.2 0" width="0.15" height="0.15" transparent="true" visible="false"></a-image>
 
-<a-image id="btnWeb" class="clickable" url-opener="link: https://www.thoughtflows.in/" src="#webIcon" 
-position="0.63 0 0" width="0.15" height="0.15" transparent="true"></a-image>
+      <a-image id="btnWeb" class="clickable" url-opener="link: https://www.thoughtflows.in/" src="#webIcon" 
+               position="0.63 0 0" width="0.15" height="0.15" transparent="true" visible="false"></a-image>
 
-<a-image id="btnFB" class="clickable" url-opener="link: https://facebook.com" src="#fbIcon" 
-position="0.63 -0.2 0" width="0.15" height="0.15" transparent="true"></a-image>
+      <a-image id="btnFB" class="clickable" url-opener="link: https://www.facebook.com/Thoughtflowshyderabad" src="#fbIcon" 
+               position="0.63 -0.2 0" width="0.15" height="0.15" transparent="true" visible="false"></a-image>
 
     </a-entity>
 
