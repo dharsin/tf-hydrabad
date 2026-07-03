@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>ThoughtFlows AR Business Card</title>
+  
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .mindar-ui-overlay {
+      z-index: 2;
+    }
+
+    #audio-prompt {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      pointer-events: none;
+      text-align: center;
+    }
+  </style>
+
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+  <script>
+    let hasPlayedIntro = false;
+    let audioUnlocked = false;
+
+    AFRAME.registerComponent('ar-target-listener', {
+      init: function () {
+        const video = document.querySelector('#cardVideo');
+        const videoPlane = document.querySelector('#videoPlane');
+        const introGroup = document.querySelector('#introGroup');
+
+        this.el.addEventListener("targetFound", () => {
+          console.log("Business card tracked.");
+          
+          if (!hasPlayedIntro) {
+            hasPlayedIntro = true;
+
+            introGroup.setAttribute('visible', 'true');
+            videoPlane.setAttribute('visible', 'false');
+            
+
+            introGroup.emit('start-intro-anim');
+            
+     
+            setTimeout(() => {
+              introGroup.setAttribute('visible', 'false');
+              videoPlane.setAttribute('visible', 'true');
+              
+              if (video) {
+                if (audioUnlocked) {
+                  video.muted = false;
+                }
+                video.play().catch(error => console.warn("Autoplay handler caught:", error));
+              }
+            }, 3500); 
+
+          } else {
+ 
+            introGroup.setAttribute('visible', 'false');
+            videoPlane.setAttribute('visible', 'true');
+            if (video) {
+              if (audioUnlocked) {
+                video.muted = false;
+              }
+              video.play().catch(error => console.warn("Autoplay handler caught:", error));
+            }
+          }
+        });
+
+        this.el.addEventListener("targetLost", () => {
+          console.log("Tracking lost - pausing video.");
+          if (video) {
+            video.pause();
+          }
+        });
+      }
+    });
+
+
+    function unlockAudioContext() {
+      const video = document.querySelector('#cardVideo');
+      const videoPlane = document.querySelector('#videoPlane');
+      
+      if (video && !audioUnlocked) {
+        video.muted = false;
+        audioUnlocked = true;
+        
+ 
+        video.play().then(() => {
+     
+          if (videoPlane.getAttribute('visible') === 'false') {
+            video.pause();
+            video.currentTime = 0;
+          }
+        }).catch(err => console.warn("Audio Context unlock error:", err));
+      }
+      
+      const prompt = document.querySelector('#audio-prompt');
+      if (prompt) prompt.style.display = 'none';
+    }
+  </script>
+</head>
+
+<body onclick="unlockAudioContext();">
+
+  <div id="audio-prompt">Tap screen anywhere to enable sound</div>
+
+  <a-scene
+    mindar-image="imageTargetSrc: ./tf-hydrabad.mind; filterMinCF:0.001; filterBeta:0.01; uiLoading:yes; uiScanning:yes;"
+    embedded
+    color-space="sRGB"
+    renderer="colorManagement: true, physicallyCorrectLights: true"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
+
+    <a-assets>
+
+      <video id="cardVideo" src="./assets/hydrabad.mp4" loop="true" crossorigin="anonymous" playsinline
+        webkit-playsinline muted autoplay></video>
+
+      <img id="logoImg" src="./assets/tflogo.png" crossorigin="anonymous">
+
+
+      <img id="instaIcon" src=".\assets\insts.png" crossorigin="anonymous">
+      <img id="fbIcon" src=".\assets\facebook.png" crossorigin="anonymous">
+      <img id="webIcon" src=".\assets\web.png" crossorigin="anonymous">
+
+
+    </a-assets>
+
+    <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;"
+      raycaster="objects: .clickable; far: 10000; interval: 100;">
+    </a-camera>
+
+    <a-entity mindar-image-target="targetIndex: 0" ar-target-listener>
+      
+    
+      <a-image src="#logoImg" position="0 0.45 0" width="0.8" height="0.22" transparent="true"></a-image>
+
+
+      <a-entity id="introGroup" position="0 0 0.01" scale="0.1 0.1 0.1" visible="false"
+                animation="property: scale; to: 1 1 1; dur: 800; easing: easeOutBack; startEvents: start-intro-anim">
+ 
+        <a-plane color="#0c101b" width="1.05" height="0.62" opacity="0.92"></a-plane>
+        
+
+        <a-text 
+          value="LET'S EXPLORE\nTHOUGHTFLOWS HYDERABAD" 
+          color="#00e5ff" 
+          align="center" 
+          width="1.5" 
+          font="kelsonsans"
+          position="0 0 0.02"
+          animation="property: scale; to: 1.04 1.04 1.04; dir: alternate; dur: 1000; loop: true; easing: easeInOutSine">
+        </a-text>
+      </a-entity>
+
+   
+      <a-video id="videoPlane" class="clickable" src="#cardVideo" position="0 0 0" width="1.05" height="0.62" visible="false"></a-video>
+
+<a-image id="btnInsta" class="clickable" url-opener="link: https://www.instagram.com/thoughtflowshyderabad/" src="#instaIcon" 
+position="0.63 0.2 0" width="0.15" height="0.15" transparent="true"></a-image>
+
+<a-image id="btnWeb" class="clickable" url-opener="link: https://www.thoughtflows.in/" src="#webIcon" 
+position="0.63 0 0" width="0.15" height="0.15" transparent="true"></a-image>
+
+<a-image id="btnFB" class="clickable" url-opener="link: https://facebook.com" src="#fbIcon" 
+position="0.63 -0.2 0" width="0.15" height="0.15" transparent="true"></a-image>
+
+    </a-entity>
+
+  </a-scene>
+</body>
+
+</html>
