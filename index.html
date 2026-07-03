@@ -56,7 +56,7 @@
     let hasPlayedIntro = false;
     let audioUnlocked = false;
 
-    // MODIFIED: Pauses video audio stream immediately upon icon click interaction
+    // Pauses video audio stream immediately upon icon click interaction
     AFRAME.registerComponent('url-opener', {
       schema: { link: { type: 'string' } },
       init: function () {
@@ -72,7 +72,7 @@
           }
 
           if (targetUrl) {
-            window.open(targetUrl, '_blank');
+            window.open(targetUrl, '_self'); // '_self' works better for system deep links like tel:
           }
         });
       }
@@ -86,13 +86,13 @@
         
         const btnInsta = document.querySelector('#btnInsta');
         const btnWeb = document.querySelector('#btnWeb');
-        const btnFB = document.querySelector('#btnFB');
+        const btnCall = document.querySelector('#btnCall');
 
         const toggleSocials = (show) => {
           const state = show ? 'true' : 'false';
           btnInsta.setAttribute('visible', state);
           btnWeb.setAttribute('visible', state);
-          btnFB.setAttribute('visible', state);
+          btnCall.setAttribute('visible', state);
         };
 
         this.el.addEventListener("targetFound", () => {
@@ -179,14 +179,15 @@
     device-orientation-permission-ui="enabled: false">
 
     <a-assets>
-      <video id="cardVideo" src="./assets/hydrabad.mp4" loop="true" crossorigin="anonymous" playsinline
+      <video id="cardVideo" src=".\assets\portraitvideo.mp4" loop="true" crossorigin="anonymous" playsinline
         webkit-playsinline muted autoplay></video>
 
       <img id="logoImg" src="./assets/tflogo.png" crossorigin="anonymous">
 
       <img id="instaIcon" src="./assets/insts.png" crossorigin="anonymous">
-      <img id="fbIcon" src="./assets/facebook.png" crossorigin="anonymous">
       <img id="webIcon" src="./assets/web.png" crossorigin="anonymous">
+      
+      <img id="phoneIcon" src=".\assets\call.png" crossorigin="anonymous">
     </a-assets>
 
     <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;"
@@ -195,7 +196,7 @@
 
     <a-entity mindar-image-target="targetIndex: 0" ar-target-listener>
       
-      <a-image src="#logoImg" position="0 0.45 0" width="0.8" height="0.22" transparent="true"></a-image>
+      <a-image src="#logoImg" position="0 0.9 0" width="0.8" height="0.22" transparent="true"></a-image>
 
       <!-- ANIMATED 3D TEXT FRAME -->
       <a-entity id="introGroup" position="0 0 0.01" scale="0.1 0.1 0.1" visible="false"
@@ -213,16 +214,17 @@
       </a-entity>
 
       <!-- VIDEO PLANE -->
-      <a-video id="videoPlane" class="clickable" src="#cardVideo" position="0 0 0" width="1.05" height="0.62" visible="false"></a-video>
+      <a-video id="videoPlane" class="clickable" src="#cardVideo" position="0 0 0" width="1" height="1.6" visible="false"></a-video>
 
-      <!-- SOCIAL INTERACTION ICONS -->
+      <!-- SOCIAL & CALL INTERACTION ICONS -->
       <a-image id="btnInsta" class="clickable" url-opener="link: https://www.instagram.com/thoughtflowshyderabad/" src="#instaIcon" 
                position="0.63 0.2 0" width="0.15" height="0.15" transparent="true" visible="false"></a-image>
 
       <a-image id="btnWeb" class="clickable" url-opener="link: https://www.thoughtflows.in/" src="#webIcon" 
                position="0.63 0 0" width="0.15" height="0.15" transparent="true" visible="false"></a-image>
 
-      <a-image id="btnFB" class="clickable" url-opener="link: https://www.facebook.com/Thoughtflowshyderabad" src="#fbIcon" 
+      <!-- CHANGED: Replaced Facebook plane with a Dial/Call trigger -->
+      <a-image id="btnCall" class="clickable" url-opener="link: tel:+1234567890" src="#phoneIcon" 
                position="0.63 -0.2 0" width="0.15" height="0.15" transparent="true" visible="false"></a-image>
 
     </a-entity>
